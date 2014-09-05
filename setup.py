@@ -1,5 +1,18 @@
 from setuptools import setup, find_packages
 
+def runtests():
+    import os
+    import sys
+    
+    import django
+    from django.core.management import call_command
+    
+    os.environ['DJANGO_SETTINGS_MODULE'] = 'test_settings'
+    if django.VERSION[0] == 1 and django.VERSION[1] >= 7:
+        django.setup()
+    call_command('test')
+    sys.exit()
+
 setup(
     name = "django-report-builder",
     version = "2.0.2",
@@ -11,9 +24,8 @@ setup(
     url = "https://github.com/burke-software/django-report-builder",
     packages=find_packages(),
     include_package_data=True,
-    test_suite='setuptest.setuptest.SetupTestSuite',
+    test_suite='setup.runtests',
     tests_require=(
-        'django-setuptest',
         'south',
         'argparse',
     ),

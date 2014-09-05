@@ -1,7 +1,12 @@
-from django.contrib.contenttypes.models import ContentType
-from django.conf import settings
-from django.core.files.base import ContentFile
-from django.contrib.admin.views.decorators import staff_member_required
+import copy
+import datetime
+from dateutil import parser
+from decimal import Decimal
+import json
+from numbers import Number
+import re
+import time
+import warnings
 
 try:
     from django.contrib.auth import get_user_model
@@ -9,7 +14,12 @@ try:
 except ImportError:
     from django.contrib.auth.models import User
 
+from django import forms
+from django.conf import settings
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import permission_required
+from django.contrib.contenttypes.models import ContentType
+from django.core.files.base import ContentFile
 from django.db.models import Q
 from django.db.models.fields.related import ReverseManyRelatedObjectsDescriptor
 from django.forms.models import inlineformset_factory
@@ -20,28 +30,18 @@ from django.shortcuts import (
     get_object_or_404,
     render)
 from django.template import RequestContext
+from django.utils.decorators import method_decorator
+from django.views.generic import TemplateView, View
+from django.views.generic.edit import CreateView, UpdateView
+
 from .models import Report, DisplayField, FilterField, Format
 from .utils import (
     javascript_date_format,
     duplicate,
 )
-from django.utils.decorators import method_decorator
-from django.views.generic.edit import CreateView, UpdateView
-from django.views.generic import TemplateView, View
-from django import forms
 
-from report_utils.model_introspection import get_relation_fields_from_model
 from report_utils.mixins import GetFieldsMixin, DataExportMixin
-
-import warnings
-import datetime
-import time
-import re
-from decimal import Decimal
-from numbers import Number
-import copy
-from dateutil import parser
-import json
+from report_utils.model_introspection import get_relation_fields_from_model
 
 
 class ReportForm(forms.ModelForm):
@@ -248,6 +248,7 @@ def ajax_get_choices(request):
     options_html = select_widget.render_options([], [0])
     return HttpResponse(options_html)
 
+
 @staff_member_required
 def ajax_get_formats(request):
     choices = Format.objects.values_list('pk', 'name')
@@ -256,12 +257,12 @@ def ajax_get_formats(request):
     return HttpResponse(options_html)
 
 
-
 class AjaxPreview(DataExportMixin, TemplateView):
     """ This view is intended for a quick preview useful when debugging
     reports. It limits to 50 objects.
     """
     template_name = "report_builder/html_report.html"
+    
     @method_decorator(staff_member_required)
     def dispatch(self, *args, **kwargs):
         return super(AjaxPreview, self).dispatch(*args, **kwargs)

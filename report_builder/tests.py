@@ -1,10 +1,13 @@
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase
 from django.test.client import Client
+
+from report_utils.model_introspection import get_properties_from_model, get_direct_fields_from_model, get_relation_fields_from_model
+
 from .models import Report, DisplayField
 from .views import *
-from django.conf import settings
-from report_utils.model_introspection import get_properties_from_model, get_direct_fields_from_model
+
 
 try:
     from django.contrib.auth import get_user_model
@@ -26,10 +29,7 @@ class UtilityFunctionTests(TestCase):
             filter_value = 'Lots of spam')
     
     def get_fields_names(self, fields):
-        names = []
-        for field in fields:
-            names += [field.name]
-        return names
+        return [field.name for field in fields]
 
     def test_get_relation_fields_from_model(self):
         fields = get_relation_fields_from_model(Report)
@@ -92,9 +92,8 @@ class ViewTests(TestCase):
         self.user = User.objects.create_user('user', 'temporary@example.com', 'user')
         self.user.is_staff = True
         self.user.save()
-        self.c = Client()
-        self.c.login(username="user", password="user")
-        self.report_ct = ContentType.objects.get_for_model(Report) 
+        self.client.login(username="user", password="user")
+        self.report_ct = ContentType.objects.get_for_model(Report)
         self.report = Report.objects.create(
             name="foo report",
             root_model=self.report_ct)
@@ -106,7 +105,7 @@ class ViewTests(TestCase):
             filter_value = 'Lots of spam')
 
     def test_ajax_get_related(self):
-        response = self.c.get('/report_builder/ajax_get_related/', {
+        response = self.client.get('/report_builder/ajax_get_related/', {
             'field': 'user_created',
             'model': self.report_ct.id,
             'path': '',
@@ -117,9 +116,9 @@ class ViewTests(TestCase):
         self.assertContains(response, "report_modified_set")
 
     def test_ajax_get_fields(self):
-        response = self.c.get('/report_builder/ajax_get_fields/', {
-            'model': self.report_ct.id,
+        response = self.client.get('/report_builder/ajax_get_fields/', {
             'field': 'displayfield',
+            'model': self.report_ct.id,
             'path': '',
             'path_verbose': '',
             })
